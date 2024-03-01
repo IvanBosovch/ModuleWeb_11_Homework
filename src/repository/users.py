@@ -1,32 +1,32 @@
 from typing import List
 from datetime import datetime, date, timedelta
 from sqlalchemy.orm import Session
-from src.database.models import User
+from src.database.models import User, UserLogin
 from src.schemas import UserBase, UserResponse, UserUpdate
 from sqlalchemy import or_, and_, extract
 
 
-async def get_users(db: Session, info: str = None) -> List[User]:
+async def get_users(db: Session, user_login: UserLogin,  info: str = None) -> List[User]:
     if info:
-        return db.query(User).filter(or_(User.first_name==info, User.last_name==info, User.email==info)).all()
+        return db.query(User).filter(and_(or_(User.first_name==info, User.last_name==info, User.email==info), User.user_id==user_login.id)).all()
     return db.query(User).all()
 
 
-async def get_user(user_id: int, db: Session) -> User:
-    return db.query(User).filter(User.id==user_id).first()
+async def get_user(user_id: int, user_login: UserLogin, db: Session) -> User:
+    return db.query(User).filter(and_(User.id==user_id, User.user_id==user_login.id)).first()
 
 
-async def create_user(body: UserBase, db: Session) -> User:
+async def create_user(body: UserBase, user_login: UserLogin, db: Session) -> User:
     user = User(first_name=body.first_name, last_name=body.last_name,
-                 email=body.email, phone=body.phone, birthday=body.birthday, data=body.data)
+                 email=body.email, phone=body.phone, birthday=body.birthday, data=body.data, user_id=user_login.id)
     db.add(user)
     db.commit()
     db.refresh(user)
     return user
 
 
-async def update_user(user_id: int, body: UserUpdate, db: Session) -> User | None:
-    user = db.query(User).filter(User.id==user_id).first()
+async def update_user(user_id: int, body: UserUpdate, user_login: UserLogin, db: Session) -> User | None:
+    user = db.query(User).filter(and_(User.user_id==user_login.id, User.id==user_id)).first()
     if user:
         if body.first_name != 'string':
             user.first_name = body.first_name
@@ -44,8 +44,8 @@ async def update_user(user_id: int, body: UserUpdate, db: Session) -> User | Non
     return user
 
 
-async def remove_user(user_id: int, db: Session) -> User | None:
-    user = db.query(User).filter(User.id==user_id).first()
+async def remove_user(user_id: int, user_login: UserLogin, db: Session) -> User | None:
+    user = db.query(User).filter(and_(User.user_id==user_login.id, User.id==user_id)).first()
     if user:
         db.delete(user)
         db.commit()
