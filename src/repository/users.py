@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from src.database.models import User, UserLogin
 from src.schemas import UserBase, UserResponse, UserUpdate
 from sqlalchemy import or_, and_, extract
+from src.repository.login import get_user_by_email
 
 
 async def get_users(db: Session, user_login: UserLogin,  info: str = None) -> List[User]:
@@ -63,4 +64,6 @@ async def get_birthday(db: Session):
                                             and_(extract("month", User.birthday) == end_date.month,
                                             extract("day", User.birthday) <= end_date.day))).all())
     return result
+
+
 

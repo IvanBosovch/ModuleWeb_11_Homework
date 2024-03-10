@@ -7,19 +7,21 @@ from src.database.db import get_db
 from src.schemas import UserBase, UserResponse, UserUpdate
 from src.repository import users as repository_users
 from src.services.auth import auth_service
-
+from fastapi_limiter.depends import RateLimiter
 
 router = APIRouter(prefix='/users', tags=["users"])
 router_birth = APIRouter(prefix='/users/birthdays', tags=['users'])
 
 
-@router.get("/", response_model=List[UserResponse])
+@router.get("/", response_model=List[UserResponse], description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def get_users(db: Session = Depends(get_db), current_user: UserLogin = Depends(auth_service.get_current_user), info: str = None):
     users = await repository_users.get_users(db, current_user, info)
     return users
 
 
-@router.get('/{user_id}', response_model=UserResponse)
+@router.get('/{user_id}', response_model=UserResponse, description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def get_user(user_id: int, db: Session = Depends(get_db), current_user: UserLogin = Depends(auth_service.get_current_user)):
     user = await repository_users.get_user(user_id, current_user, db)
     if user is None:
@@ -27,7 +29,8 @@ async def get_user(user_id: int, db: Session = Depends(get_db), current_user: Us
     return user
 
 
-@router.post('/', response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post('/', response_model=UserResponse, status_code=status.HTTP_201_CREATED, description='No more than 10 requests per minute',
+            dependencies=[Depends(RateLimiter(times=10, seconds=60))])
 async def create_user(body: UserBase, db: Session = Depends(get_db), current_user: UserLogin = Depends(auth_service.get_current_user)):
     return await repository_users.create_user(body, current_user, db)
 

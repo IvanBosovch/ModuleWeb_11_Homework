@@ -1,6 +1,6 @@
 from libgravatar import Gravatar
 from sqlalchemy.orm import Session
-
+from src.database.models import User
 from src.database.models import UserLogin
 from src.schemas import LoginModel
 
@@ -26,3 +26,16 @@ async def create_user(body: LoginModel, db: Session) -> UserLogin:
 async def update_token(user: UserLogin, token: str | None, db: Session) -> None:
     user.refresh_token = token
     db.commit()
+
+
+async def confirmed_email(email: str, db: Session) -> None:
+    user = await get_user_by_email(email, db)
+    user.confirmed = True
+    db.commit()
+
+
+async def update_avatar(email, url: str, db: Session) -> User:
+    user = await get_user_by_email(email, db)
+    user.avatar = url
+    db.commit()
+    return user
