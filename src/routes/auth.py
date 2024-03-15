@@ -14,8 +14,9 @@ router = APIRouter(prefix='/auth', tags=["auth"])
 security = HTTPBearer()
 
 
-@router.post("/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED, description='No more than 2 sighup per minute',
-            dependencies=[Depends(RateLimiter(times=2, seconds=60))])
+# @router.post("/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED, description='No more than 2 sighup per minute',
+#             dependencies=[Depends(RateLimiter(times=2, seconds=60))])
+@router.post("/signup", response_model=LoginResponse, status_code=status.HTTP_201_CREATED)
 async def signup(body: LoginModel, background_tasks: BackgroundTasks, request: Request, db: Session = Depends(get_db)):
     exist_user = await repository_users.get_user_by_email(body.email, db)
     if exist_user:
